@@ -1,0 +1,89 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-04-10"
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+```
+
+```{r}
+df = read_excel("./orig_data/Snaq_voucher_28022023.xlsx")
+df = na.omit(df)
+df$Orig_Species = df$Species
+```
+
+```{r cleaning}
+df$Species[df$Species == "Dendroceros aff. crispus"] = "Dendroceros af. crispus"
+df$Species <- gsub("  ", " ", df$Species)
+df$Species <- gsub("\\. ", " ", df$Species)
+df$Species <- str_remove_all(df$Species, '\\.')
+df$Species <- gsub(" ", "_", df$Species)
+
+df$Species <- paste(df$sampleID, df$Species, sep=".") #match the format in the tree file
+
+df$Species[df$Species == "UFG_393202_P035_WH03.Pseudomarsupidium_decipiens"] = "UFG_393202_P035_WH03.Adelanthus_decipiens"
+df$Species[df$Species == "UFG_393201_P02_WF03.Syzygiella_sonderi"] = "UFG_393201_P02_WF03.Cryptochila_grandiflora"
+df$Species[df$Species == "UFG_393202_P035_WD07.Sphenolobus_saxicola"] = "UFG_393202_P035_WD07.Anastrophyllum_saxicola"
+df$Species[df$Species == "UFG_393202_P035_WD06.Orthocaulis_attenuatus"] = "UFG_393202_P035_WD06.Barbilophozia_attenuata"
+df$Species[df$Species == "UFG_393202_P035_WB04.Biantheridion_undulifolium"] = "UFG_393202_P035_WB04.Jamesoniella_undulifolia"
+df$Species[df$Species == "UFG_393202_P035_WB09.Isopaches_bicrenatus"] = "UFG_393202_P035_WB09.Lophozia_bicrenata"
+df$Species[df$Species == "UFG_393201_P02_WD08.Odontoschisma_portoricensis"] = "UFG_393201_P02_WD08.Anomoclada_portoricensis"
+df$Species[df$Species == "UFG_393202_P035_WG05.Fuscocephaloziopsis_albescens"] = "UFG_393202_P035_WG05.Pleurocladula_albescens"
+df$Species[df$Species == "UFG_393202_P035_WF10.Mesoptychia_rutheana"] = "UFG_393202_P035_WF10.Leiocolea_rutheana"
+df$Species[df$Species == "UFG_393202_P024_WD07.Amazoopsis_diplopoda"] = "UFG_393202_P024_WD07.Arachniopsis_Diplopoda"
+df$Species[df$Species == "UFG_393202_P035_WG02.Tricholepidozia_tetradactyla"] = "UFG_393202_P035_WG02.Telaranea_tetradactyla"
+df$Species[df$Species == "UFG_393202_P035_WH08.Schistochilopsis_opacifolia"] = "UFG_393202_P035_WH08.Lophozia_opacifolia"
+df$Species[df$Species == "UFG_393202_P035_WC08.Saccobasis_polita"] = "UFG_393202_P035_WC08.Tritomaria_polita"
+df$Species[df$Species == "UFG_393202_P034_WC05.Apopellia_endiviifolia"] = "UFG_393202_P034_WC05.Pellia_endiviifolia"
+df$Species[df$Species == "UFG_393202_P033_WD02.Clevea_hyalina"] = "UFG_393202_P033_WD02.Athalamia_hyalina"
+df$Species[df$Species == "UFG_393202_P024_WC10.Andreaea_wilsonii"] = "UFG_393202_P024_WC10.Acroschisma_wilsonii"
+df$Species[df$Species == "UFG_393202_P037_WF03.Imbribryum_alpinum"] = "UFG_393202_P037_WF03.Bryum_alpinum"
+df$Species[df$Species == "UFG_393202_P037_WB06.Ptychostomum_pseudotriquetrum"] = "UFG_393202_P037_WB06.Bryum_neodamense"
+df$Species[df$Species == "UFG_393202_P037_WE10.Roellobryon_roellii"] = "UFG_393202_P037_WE10.Roellia_roellii"
+df$Species[df$Species == "UFG_393202_P025_WH01.Mielichhoferia_elongata"] = "UFG_393202_P025_WH01.Mielichoferia_elongata"
+df$Species[df$Species == "UFG_393202_P025_WC05.Clastobryum_cuculligerum"] = "UFG_393202_P025_WC05.Dicnemon_cuspidatum"
+df$Species[df$Species == "UFG_393202_P032_WH08.Flexitrichum_flexicaule"] = "UFG_393202_P032_WH08.Ditrichum_flexicaule"
+df$Species[df$Species == "UFG_393202_P032_WA09.Flexitrichum_gracile"] = "UFG_393202_P032_WA09.Ditrichum_gracile"
+df$Species[df$Species == "UFG_393202_P036_WE01.Atractylocarpus_subporodictyon"] = "UFG_393202_P036_WE01.Campylopus_subporodictyon"
+df$Species[df$Species == "UFG_393201_P03_WA02.Leucobryum_glaucum"] = "UFG_393201_P03_WA02.Leucobrym_glaucum"
+df$Species[df$Species == "UFG_393201_P03_WH02.Physcomitrium_patens"] = "UFG_393201_P03_WH02.Physcomitrella_patens"
+df$Species[df$Species == "UFG_393202_P032_WF04.Niphotrichum_canescens"] = "UFG_393202_P032_WF04.Racomitrium_canescens"
+df$Species[df$Species == "UFG_393202_P032_WA04.Bucklandiella_heterosticha"] = "UFG_393202_P032_WA04.Racomitrium_heterostichum"
+df$Species[df$Species == "UFG_393202_P032_WD05.Blindiadelphus_recurvatus"] = "UFG_393202_P032_WD05.Seligeria_recurvata"
+df$Species[df$Species == "UFG_393202_P038_WG12.Kandaea_elodes"] = "UFG_393202_P038_WG12.Campyliadelphus_elodes"
+df$Species[df$Species == "UFG_393202_P040_WA09.Pseudanomodon_attenuatus"] = "UFG_393202_P040_WA09.Anomodon_attenuatus"
+df$Species[df$Species == "UFG_393202_P040_WC03.Rhynchostegium_riparioides"] = "UFG_393202_P040_WC03.Platyhypnidium_riparioides"
+df$Species[df$Species == "UFG_393202_P040_WA06.Pseudostereodon_procerrimus"] = "UFG_393202_P040_WA06.Ctenidium_procerrimum"
+df$Species[df$Species == "UFG_393202_P040_WG05.Callicladium_imponens"] = "UFG_393202_P040_WG05.Hypnum_imponens"
+df$Species[df$Species == "UFG_393202_P040_WD05.Buckia_vaucheri"] = "UFG_393202_P040_WD05.Hypnum_vaucheri"
+df$Species[df$Species == "UFG_393202_P040_WE02.Lescuraea_incurvata"] = "UFG_393202_P040_WE02.Pseudoleskea_incurvata"
+df$Species[df$Species == "UFG_393202_P040_WF02.Lescuraea_plicata"] = "UFG_393202_P040_WF02.Ptychodium_plicatum"
+df$Species[df$Species == "UFG_393202_P003_WG07.Nogopterium_gracile"] = "UFG_393202_P003_WG07.Pterogonium_gracile"
+df$Species[df$Species == "UFG_393202_P040_WC08.Alleniella_complanata"] = "UFG_393202_P040_WC08.Neckera_complanata"
+df$Species[df$Species == "UFG_393202_P040_WA08.Exsertotheca_crispa"] = "UFG_393202_P040_WA08.Neckera_crispa"
+df$Species[df$Species == "UFG_393202_P003_WA02.Henicodium_geniculatum"] = "UFG_393202_P003_WA02.Leucodontopsis_geniculata"
+df$Species[df$Species == "UFG_393202_P038_WB04.Pulvigera_lyellii"] = "UFG_393202_P038_WB04.Orthotrichum_lyellii"
+df$Species[df$Species == "UFG_393202_P026_WD10.Plenogemma_phyllantha"] = "UFG_393202_P026_WD10.Ulota_phyllantha"
+df$Species[df$Species == "UFG_393202_P036_WG09.Streblotrichum_convolutum"] = "UFG_393202_P036_WG09.Barbula_convoluta"
+df$Species[df$Species == "UFG_393202_P036_WB07.Chionoloma_hibernicum"] = "UFG_393202_P036_WB07.Oxystegus_minor"
+df$Species[df$Species == "UFG_393201_P03_WF02.Tortula_truncata"] = "UFG_393201_P03_WF02.Tortula_truncala"
+df$Species[df$Species == "UFG_393202_P024_WF11.Eosphagnum_inretortum"] = "UFG_393202_P024_WF11.Eosphagum_inretortum"
+df$Species[df$Species == "UFG_393201_P03_WD02.Takakia_lepidozioides"] = "UFG_393201_P03_WD02.Takakia_lepizioides"
+
+write.csv(df, "mapping.csv")
+```
+
+```{r}
+file <- paste(readLines("./orig_data/SnAq_Bryophyte_Introgression/Astral_allbryos_G_Jul2021_GeneTrees_rooted.nex"), collapse="\n")
+
+for (i in df$Species){
+  if (grepl(i, file, fixed=TRUE) ==FALSE){
+    print(i)
+  }
+}
+
+```
+
