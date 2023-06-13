@@ -1,4 +1,4 @@
-#cd("/Users/zhaoxingwu/Desktop/claudia lab/2023 phylogenetics data analysis")
+#cd("/Users/zhaoxingwu/Desktop/claudia lab/2023 phylogenetics data analysis/bryophytes-introgression")
 
 
 using PhyloNetworks, PhyloPlots, DataFrames, CSV, Statistics, Distributions, Random, DelimitedFiles, Combinatorics
@@ -10,25 +10,27 @@ using JLD2
 #choose(13, 4) = 715
 #choose(12, 4)
 function main()
+    load_object("./data/cf.jld2")
     #tree_remove_species()
-    run_snaq()
+    #run_snaq()
     
 end
 
 function run_snaq()
-    cf = load_object("cf.jld2")
+    cf = load_object("./data/cf.jld2")
     @time net0 = snaq!(readTopology("tree_start_ord.txt"), readTableCF(cf), hmax=1, filename="net0_bucky", seed=123, runs=1)
 end
 
-# pick a tree as the starting tree for snaq
+
 # convert the species name to order
 function tree_remove_species()
-    genetrees = readMultiTopology("./tree.txt"); # list of all trees
+    genetrees = readMultiTopology("./data/tree.txt"); # list of all trees
 
-    tm = DataFrame(CSV.File("./group.csv"))
+    tm = DataFrame(CSV.File("./data/group.csv"))
     taxonmap = Dict(row[:Species] => row[:Order] for row in eachrow(tm))
 
-    file = open("tree_start_ord.txt", "a") #output
+    #tree_start_ord
+    file = open("tree_ord.txt", "a") #output
 
     for net in genetrees
         leaf = []
@@ -57,32 +59,36 @@ function tree_remove_species()
             deleteleaf!(net_merge, i, keeporiginalroot=true)
         end
         
+        """
+        # pick a tree as the starting tree for snaq
         if cnt == length(unique(tm[:, "Order"])) #if output tree contain all orders
             print(net_merge)
             write(file, writeTopology(net_merge))
             break
         end
+        """
+        write(file, writeTopology(net_merge))
     end
     close(file)
 end
 
 function read_cf()
-    tm = DataFrame(CSV.File("./group.csv"))
+    tm = DataFrame(CSV.File("./data/group.csv"))
     taxonmap = Dict(row[:Species] => row[:Order] for row in eachrow(tm))
-    genetrees = readMultiTopology("./tree.txt");
+    genetrees = readMultiTopology("./data/tree.txt");
     q,t = countquartetsintrees(genetrees, taxonmap, showprogressbar=true);
-    save_object("q.jld2", q)
-    save_object("t.jld2", t)
+    save_object("./data/q.jld2", q)
+    save_object("./data/t.jld2", t)
     df_wide = writeTableCF(q,t)
     df = df_wide[:,[:t1, :t2, :t3, :t4, :CF12_34, :CF13_24, :CF14_23]]
-    save_object("cf.jld2", df)
+    save_object("./data/cf.jld2", df)
 end
 
 
 # convert .nex file to a format that can be accepted by readMultiTopology()
 function convert_nex_tree()
-    f = open("./orig_data/SnAq_Bryophyte_Introgression/Astral_allbryos_G_Jul2021_GeneTrees_rooted.nex", "r")
-    file = open("./tree.txt", "a")
+    f = open("./data/orig_data/SnAq_Bryophyte_Introgression/Astral_allbryos_G_Jul2021_GeneTrees_rooted.nex", "r")
+    file = open("./data/tree.txt", "a")
 
     for line in readlines(f)
         if startswith(line, "\ttree")

@@ -1,0 +1,39 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-04-13"
+---
+```{r}
+library(MSCquartets)
+library(phangorn)
+```
+
+```{r}
+start_time <- Sys.time()
+
+out = NANUQ("../data/tree_ord.txt")
+end_time <- Sys.time()
+
+quartetTreeTestInd(
+rqt,
+model = "T3",
+lambda = 0,
+method = "MLest",
+smallcounts = "approximate",
+bootstraps = 10^4,
+speciestree = NULL
+)
+library(MASS)
+write.matrix(out,file="Mat.csv")
+```
+
+```{r}
+#example
+data(Laurasiatherian)
+dm <- dist.hamming(Laurasiatherian)
+filename = "../output/NANUQdist_alpha0.05_beta0.95 copy.nex"
+readDist(filename, format = "nexus")
+read.nexus.dist(filename)
+```
+ 
+

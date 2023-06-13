@@ -10,12 +10,13 @@ library(readxl)
 ```
 
 ```{r}
-df = read_excel("./orig_data/Snaq_voucher_28022023.xlsx")
+df = read_excel("../data/orig_data/Snaq_voucher_28022023.xlsx")
 df = na.omit(df)
 df$Orig_Species = df$Species
 ```
 
 ```{r cleaning}
+
 df$Species[df$Species == "Dendroceros aff. crispus"] = "Dendroceros af. crispus"
 df$Species <- gsub("  ", " ", df$Species)
 df$Species <- gsub("\\. ", " ", df$Species)
@@ -24,6 +25,7 @@ df$Species <- gsub(" ", "_", df$Species)
 
 df$Species <- paste(df$sampleID, df$Species, sep=".") #match the format in the tree file
 
+df$Species[df$Species == "UFG_393202_P090_WB12.Dendroceros_af_crispus"] = "UFG_393202_P090_WB12.Dendroceros_af_crispus_4"
 df$Species[df$Species == "UFG_393202_P035_WH03.Pseudomarsupidium_decipiens"] = "UFG_393202_P035_WH03.Adelanthus_decipiens"
 df$Species[df$Species == "UFG_393201_P02_WF03.Syzygiella_sonderi"] = "UFG_393201_P02_WF03.Cryptochila_grandiflora"
 df$Species[df$Species == "UFG_393202_P035_WD07.Sphenolobus_saxicola"] = "UFG_393202_P035_WD07.Anastrophyllum_saxicola"
@@ -73,11 +75,11 @@ df$Species[df$Species == "UFG_393201_P03_WF02.Tortula_truncata"] = "UFG_393201_P
 df$Species[df$Species == "UFG_393202_P024_WF11.Eosphagnum_inretortum"] = "UFG_393202_P024_WF11.Eosphagum_inretortum"
 df$Species[df$Species == "UFG_393201_P03_WD02.Takakia_lepidozioides"] = "UFG_393201_P03_WD02.Takakia_lepizioides"
 
-write.csv(df, "mapping.csv")
+#write.csv(df, "../data/group.csv")
 ```
 
 ```{r}
-file <- paste(readLines("./orig_data/SnAq_Bryophyte_Introgression/Astral_allbryos_G_Jul2021_GeneTrees_rooted.nex"), collapse="\n")
+file <- paste(readLines("../data/orig_data/SnAq_Bryophyte_Introgression/Astral_allbryos_G_Jul2021_GeneTrees_rooted.nex"), collapse="\n")
 
 for (i in df$Species){
   if (grepl(i, file, fixed=TRUE) ==FALSE){
@@ -85,5 +87,12 @@ for (i in df$Species){
   }
 }
 
+```
+
+```{r}
+#get the mapping according to the order in phylip file
+
+
+file <- read.csv("../data/hyde_data.txt")
 ```
 
