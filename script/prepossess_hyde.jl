@@ -1,3 +1,4 @@
+#cd("/Users/zhaoxingwu/Desktop/claudia lab/2023 phylogenetics data analysis/bryophytes-introgression")
 using PhyloNetworks, PhyloPlots, DataFrames, CSV, Statistics, Distributions, Random, DelimitedFiles, Combinatorics
 using JLD2
 
@@ -9,6 +10,7 @@ t = ["Andreaeales", "Anthocerotales", "Archidiales", "Aulacomniales", "Bartramia
 "Pleuroziales", "Polytrichales", "Porellales", "Pottiales", "Ptilidiales", "Ptychomniales", "Rhabdoweisiales", "Rhizogoniales", 
 "Sphaerocarpales", "Sphagnales", "Splachnales", "Takakiales", "Tetraphidales"]
 
+"""#prepare script
 file_phy = open("data/phy.txt", "r")
 df = DataFrame(CSV.File("data/group.csv"))
 file_seq = open("hyde_data.txt", "a")
@@ -27,4 +29,13 @@ for line in readlines(file_phy)
 end
 close(file_seq)
 close(file_map)
+"""
+
+file_seq = open("data/hyde_data.txt", "r")
+for line in readlines(file_seq)
+    species = split(line, "\t")[2]
+    print(length(species))
+    print("\n")
+end
+close(file_seq)
     

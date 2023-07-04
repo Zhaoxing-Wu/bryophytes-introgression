@@ -1,0 +1,250 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-06-02"
+---
+
+```{r}
+library(ggtree)
+library(dplyr)
+library(ggplot2)
+library(gtable)
+library(treeio)
+library(ggnewscale)
+library(tidyverse)
+```
+
+```{r tree}
+# Create plot of proposed species tree, with aligned labels
+astral_tree <- "(Perssoniales,(Ptilidiales,(((Myliales,(Marchantiales,Jungermanniales)0.67:0.288)0.67:0.288,(Pallaviciniales,(Fossombroniales,(Pleuroziales,(Metzgeriales,(Pelliales,(Sphaerocarpales,((Blasiales,Neohodgsoniales)0.67:0.288,(Anthocerotales,(Notothyladales,(Phymatocerotales,Dendrocerotales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288,(Porellales,(Sphagnales,(Takakiales,((Tetraphidales,(Oedipodiales,Andreaeales)0.67:0.288)0.67:0.288,(Polytrichales,(Buxbaumiales,(Gigaspermales,(Funariales,((Catoscopiales,((Splachnales,(Hedwigiales,(Bartramiales,(Rhizogoniales,(Bryales,Orthotrichales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288,(Orthodontiales,((Aulacomniales,Hypnodendrales)0.67:0.288,(Ptychomniales,(Hypopterygiales,(Hypnales,Hookeriales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288,(((Dicranales,Rhabdoweisiales)0.67:0.288,(Pottiales,Ditrichales)0.67:0.288)0.67:0.288,(Grimmiales,(Archidiales,(Pleurophascales,(Bruchiales,Erpodiales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288):0.0);"
+tree <- read.nhx(textConnection(astral_tree))
+tiplabels = tree@phylo$tip.label
+numlabels = length(tiplabels)
+```
+
+```{r mscquartets}
+MSC_results <- read.csv("../output/mscquartets_output.txt") %>%
+  select(-jungermanniales)
+MSC_results=MSC_results[,2:56]
+
+alpha <- 0.05
+numTests <- nrow(MSC_results) #249900
+
+summary_MSC <- MSC_results %>% summarize(
+  numSignificantAlpha = sum(p_T3 < alpha, na.rm=TRUE),#36405		
+  numSignificantBonferroni = sum(p_T3 < alpha/numTests, na.rm=TRUE) #3132
+)
+
+# count number of occurrences where tip == 1, bonferroni level or p-val level reached
+num_alpha05 <- c()
+num_bonferroni <- c()
+
+column_names <- colnames(MSC_results)
+columnnameslength = length(column_names)
+
+for (a in 1:columnnameslength) {
+  num_alpha05[a] <- sum(MSC_results[ , a] == 1 & MSC_results$p_T3 < alpha)
+  num_bonferroni[a] <- sum(MSC_results[ , a] == 1 & MSC_results$p_T3 < alpha/numTests)
+}
+
+for (a in 1:columnnameslength) {
+  num_alpha05[a] <- sum(MSC_results[ , a] == 1 & MSC_results$p_T3 < alpha )
+  num_bonferroni[a] <- sum(MSC_results[ , a] == 1  & MSC_results$p_T3 < alpha/numTests)
+}
+
+alpha05 = data.frame(taxa = column_names, frequency = num_alpha05)
+alphabon = data.frame(taxa = column_names, frequency = num_bonferroni)
+
+a05 = num_alpha05
+ab = num_bonferroni
+df_alpha = data.frame(MSC= a05[1:50]/summary_MSC$numSignificantAlpha)
+df_bonferroni = data.frame(MSC = ab[1:50]/summary_MSC$numSignificantBonferroni)
+```
+
+```{r nanuq}
+nanuq_results <- read.csv("../output/nanuq_output.csv", sep = " ") %>%
+  select(-jungermanniales)
+
+alpha <- 0.05
+numTests <- nrow(nanuq_results)
+
+summary_nanuq <- nanuq_results %>% summarize(
+  numSignificantAlpha = sum(p_T3 < alpha, na.rm=TRUE),
+  numSignificantBonferroni = sum(p_T3 < alpha/numTests, na.rm=TRUE)
+)
+
+# count number of occurrences where tip == 1, bonferroni level or p-val level reached
+num_alpha05 <- c()
+num_bonferroni <- c()
+
+column_names <- colnames(nanuq_results)
+columnnameslength = length(column_names)
+
+for (a in 1:columnnameslength) {
+  num_alpha05[a] <- sum(nanuq_results[ , a] == 1 & nanuq_results$p_T3 < alpha)
+  num_bonferroni[a] <- sum(nanuq_results[ , a] == 1 & nanuq_results$p_T3 < alpha/numTests)
+}
+
+for (a in 1:columnnameslength) {
+  num_alpha05[a] <- sum(nanuq_results[ , a] == 1 & nanuq_results$p_T3 < alpha )
+  num_bonferroni[a] <- sum(nanuq_results[ , a] == 1  & nanuq_results$p_T3 < alpha/numTests)
+}
+
+alpha05 = data.frame(taxa = column_names, frequency = num_alpha05)
+alphabon = data.frame(taxa = column_names, frequency = num_bonferroni)
+
+a05 = num_alpha05
+ab = num_bonferroni
+
+df_alpha["nanuq"] = a05[1:50]/summary_nanuq$numSignificantAlpha
+df_bonferroni["nanuq"] = ab[1:50]/summary_nanuq$numSignificantBonferroni
+df_alpha$taxa = colnames(nanuq_results)[1:50]
+df_bonferroni$taxa = colnames(nanuq_results)[1:50]
+```
+
+```{r HyDe}
+HyDe_results = read.csv("../output/hyde_analyzed.csv")
+
+numHyDeHyb_alpha05 = c()
+numHyDeHyb_bonferroni = c()
+
+numHyDe_alpha05 = c()
+numHyDe_bonferroni = c()
+
+numD_alpha05 = c()
+numD_bonferroni = c()
+
+numD3_alpha05 = c()
+numD3_bonferroni = c()
+
+numDp_alpha05 = c()
+numDp_bonferroni = c()
+
+tiplabels = tiplabels[-which(tiplabels %in% c("Dendrocerotales", "Notothyladales", "Phymatocerotales", "Leiosporocerotales") )]
+numlabels = length(tiplabels)
+
+for (a in 1:numlabels) {
+  numHyDeHyb_alpha05[a] <- sum(HyDe_results$Hybrid == tiplabels[a] & HyDe_results$HyDe_pvalue < alpha)
+  numHyDeHyb_bonferroni[a] <- sum(HyDe_results$Hybrid == tiplabels[a] & HyDe_results$HyDe_pvalue < alpha/numTests)
+  
+  numHyDe_alpha05[a] <- sum((HyDe_results$Hybrid == tiplabels[a] | (HyDe_results$P1 == tiplabels[a]) | (HyDe_results$P2 == tiplabels[a]))  & HyDe_results$HyDe_pvalue < alpha)
+  numHyDe_bonferroni[a] <- sum((HyDe_results$Hybrid == tiplabels[a] | (HyDe_results$P1 == tiplabels[a]) | (HyDe_results$P2 == tiplabels[a]))  & HyDe_results$HyDe_pvalue < alpha/numTests)
+  
+  numHyDe_alpha05[a] <- sum((HyDe_results$P1 == tiplabels[a] | (HyDe_results$P2 == tiplabels[a]))  & HyDe_results$HyDe_pvalue < alpha)
+  numHyDe_bonferroni[a] <- sum((HyDe_results$P1 == tiplabels[a] | (HyDe_results$P2 == tiplabels[a]))  & HyDe_results$HyDe_pvalue < alpha/numTests)
+  
+
+  numD_alpha05[a] <- sum((HyDe_results$P1 == tiplabels[a]) & (HyDe_results$isDtestTopology == 1) & (HyDe_results$D_pvalue < alpha)) +
+                     sum((HyDe_results$Hybrid == tiplabels[a]) & (HyDe_results$isDtestTopology == 2) & (HyDe_results$D_pvalue < alpha)) +
+                     sum((HyDe_results$P2 == tiplabels[a]) & (HyDe_results$isDtestTopology == 3) & (HyDe_results$D_pvalue < alpha)) +
+                     sum((HyDe_results$P1 == tiplabels[a]) & (HyDe_results$isDtestTopology == 2) & (HyDe_results$D_pvalue < alpha) & (HyDe_results$D < 0))  +
+                     sum((HyDe_results$P1 == tiplabels[a]) & (HyDe_results$isDtestTopology == 3) & (HyDe_results$D_pvalue < alpha) & (HyDe_results$D < 0)) +
+                     sum((HyDe_results$Hybrid == tiplabels[a]) & (HyDe_results$isDtestTopology == 1) & (HyDe_results$D_pvalue < alpha) & (HyDe_results$D > 0))  +
+                     sum((HyDe_results$Hybrid == tiplabels[a]) & (HyDe_results$isDtestTopology == 3) & (HyDe_results$D_pvalue < alpha) & (HyDe_results$D > 0)) +
+                     sum((HyDe_results$P2 == tiplabels[a]) & (HyDe_results$isDtestTopology == 1) & (HyDe_results$D_pvalue < alpha) & (HyDe_results$D < 0))  +
+                     sum((HyDe_results$P2 == tiplabels[a]) & (HyDe_results$isDtestTopology == 2) & (HyDe_results$D_pvalue < alpha) & (HyDe_results$D > 0))
+    
+  numD_bonferroni[a] <- sum((HyDe_results$P1 == tiplabels[a]) & (HyDe_results$isDtestTopology == 1) & (HyDe_results$D_pvalue < alpha/numTests)) +
+    sum((HyDe_results$Hybrid == tiplabels[a]) & (HyDe_results$isDtestTopology == 2) & (HyDe_results$D_pvalue < alpha/numTests)) +
+    sum((HyDe_results$P2 == tiplabels[a]) & (HyDe_results$isDtestTopology == 3) & (HyDe_results$D_pvalue < alpha/numTests)) +
+    sum((HyDe_results$P1 == tiplabels[a]) & (HyDe_results$isDtestTopology == 2) & (HyDe_results$D_pvalue < alpha/numTests) & (HyDe_results$D < 0))  +
+    sum((HyDe_results$P1 == tiplabels[a]) & (HyDe_results$isDtestTopology == 3) & (HyDe_results$D_pvalue < alpha/numTests) & (HyDe_results$D < 0)) +
+    sum((HyDe_results$Hybrid == tiplabels[a]) & (HyDe_results$isDtestTopology == 1) & (HyDe_results$D_pvalue < alpha/numTests) & (HyDe_results$D > 0))  +
+    sum((HyDe_results$Hybrid == tiplabels[a]) & (HyDe_results$isDtestTopology == 3) & (HyDe_results$D_pvalue < alpha/numTests) & (HyDe_results$D > 0)) +
+    sum((HyDe_results$P2 == tiplabels[a]) & (HyDe_results$isDtestTopology == 1) & (HyDe_results$D_pvalue < alpha/numTests) & (HyDe_results$D < 0))  +
+    sum((HyDe_results$P2 == tiplabels[a]) & (HyDe_results$isDtestTopology == 2) & (HyDe_results$D_pvalue < alpha/numTests) & (HyDe_results$D > 0))
+  
+  numD3_alpha05[a] <- sum((HyDe_results$P1 == tiplabels[a]) & (HyDe_results$isDtestTopology == 1) & (HyDe_results$D3_pvalue < alpha)) +
+    sum((HyDe_results$Hybrid == tiplabels[a]) & (HyDe_results$isDtestTopology == 2) & (HyDe_results$D3_pvalue < alpha)) +
+    sum((HyDe_results$P2 == tiplabels[a]) & (HyDe_results$isDtestTopology == 3) & (HyDe_results$D3_pvalue < alpha)) +
+    
+    sum((HyDe_results$P1 == tiplabels[a]) & (HyDe_results$isDtestTopology == 2) & (HyDe_results$D3_pvalue < alpha) & (HyDe_results$D3 > 0))  +
+    sum((HyDe_results$P1 == tiplabels[a]) & (HyDe_results$isDtestTopology == 3) & (HyDe_results$D3_pvalue < alpha) & (HyDe_results$D3 > 0)) +
+    
+    sum((HyDe_results$Hybrid == tiplabels[a]) & (HyDe_results$isDtestTopology == 1) & (HyDe_results$D3_pvalue < alpha) & (HyDe_results$D3 < 0))  +
+    sum((HyDe_results$Hybrid == tiplabels[a]) & (HyDe_results$isDtestTopology == 3) & (HyDe_results$D3_pvalue < alpha) & (HyDe_results$D3 < 0)) +
+    
+    sum((HyDe_results$P2 == tiplabels[a]) & (HyDe_results$isDtestTopology == 1) & (HyDe_results$D3_pvalue < alpha) & (HyDe_results$D3 > 0))  +
+    sum((HyDe_results$P2 == tiplabels[a]) & (HyDe_results$isDtestTopology == 2) & (HyDe_results$D3_pvalue < alpha) & (HyDe_results$D3 < 0))
+  
+  
+  numD3_bonferroni[a] <-  sum((HyDe_results$P1 == tiplabels[a]) & (HyDe_results$isDtestTopology == 1) & (HyDe_results$D3_pvalue < alpha/numTests)) +
+    sum((HyDe_results$Hybrid == tiplabels[a]) & (HyDe_results$isDtestTopology == 2) & (HyDe_results$D3_pvalue < alpha/numTests)) +
+    sum((HyDe_results$P2 == tiplabels[a]) & (HyDe_results$isDtestTopology == 3) & (HyDe_results$D3_pvalue < alpha/numTests)) +
+    sum((HyDe_results$P1 == tiplabels[a]) & (HyDe_results$isDtestTopology == 2) & (HyDe_results$D3_pvalue < alpha/numTests) & (HyDe_results$D3 > 0))  +
+    sum((HyDe_results$P1 == tiplabels[a]) & (HyDe_results$isDtestTopology == 3) & (HyDe_results$D3_pvalue < alpha/numTests) & (HyDe_results$D3 > 0)) +
+    sum((HyDe_results$Hybrid == tiplabels[a]) & (HyDe_results$isDtestTopology == 1) & (HyDe_results$D3_pvalue < alpha/numTests) & (HyDe_results$D3 < 0))  +
+    sum((HyDe_results$Hybrid == tiplabels[a]) & (HyDe_results$isDtestTopology == 3) & (HyDe_results$D3_pvalue < alpha/numTests) & (HyDe_results$D3 < 0)) +
+    sum((HyDe_results$P2 == tiplabels[a]) & (HyDe_results$isDtestTopology == 1) & (HyDe_results$D3_pvalue < alpha/numTests) & (HyDe_results$D3 > 0))  +
+    sum((HyDe_results$P2 == tiplabels[a]) & (HyDe_results$isDtestTopology == 2) & (HyDe_results$D3_pvalue < alpha/numTests) & (HyDe_results$D3 < 0))
+  
+  
+  numDp_alpha05[a] <- sum((HyDe_results$Hybrid == tiplabels[a] | (HyDe_results$P1 == tiplabels[a]) | (HyDe_results$P2 == tiplabels[a])) & HyDe_results$Dp_pvalue < alpha)
+  numDp_bonferroni[a] <- sum((HyDe_results$Hybrid == tiplabels[a] | (HyDe_results$P1 == tiplabels[a]) | (HyDe_results$P2 == tiplabels[a])) & HyDe_results$Dp_pvalue < alpha/numTests)
+  
+}
+
+HyDe_resCounts <- HyDe_results %>% group_by()
+summary_HyDe <- HyDe_results %>% summarise(
+  numHyDe_siga = sum(HyDe_results$HyDe_pvalue < alpha),
+  numHyDe_sigb = sum(HyDe_results$HyDe_pvalue < alpha/numTests),
+  
+  numD_siga = sum(HyDe_results$HyDe_pvalue < alpha),
+  numD_sigb = sum(HyDe_results$HyDe_pvalue < alpha/numTests),
+  
+  numD3_siga = sum(HyDe_results$HyDe_pvalue < alpha),
+  numD3_sigb = sum(HyDe_results$HyDe_pvalue < alpha/numTests)
+)
+
+df_alpha_hyde = data.frame(taxa = tiplabels,
+                HyDe_H = numHyDeHyb_alpha05/summary_HyDe$numHyDe_siga,
+                HyDe_P= numHyDe_alpha05/summary_HyDe$numHyDe_siga,
+                D = numD_alpha05/summary_HyDe$numD_siga,
+                D3 = numD3_alpha05/summary_HyDe$numD3_siga)
+
+df_bonferroni_hyde = data.frame(taxa = tiplabels,
+                           HyDe_H = numHyDeHyb_bonferroni/summary_HyDe$numHyDe_sigb,
+                           HyDe_P = numHyDe_bonferroni/summary_HyDe$numHyDe_sigb,
+                           D = numD_bonferroni/summary_HyDe$numD_sigb,
+                           D3 = numD3_bonferroni/summary_HyDe$numD3_sigb)
+df_alpha = left_join(df_alpha, df_alpha_hyde, by = "taxa")
+df_bonferroni = left_join(df_bonferroni, df_bonferroni_hyde, by = "taxa")
+```
+
+```{r plot}
+# Scale values from 0 to 1 based on the maximum value of that test
+for (column in colnames(df_alpha)) {
+  if (column != "taxa"){
+    print(df_alpha[!is.na(df_alpha["D"]), column])
+    df_alpha[column] = df_alpha[column] / max(df_alpha[!is.na(df_alpha["D"]), column])
+    df_bonferroni[column] = df_bonferroni[column] / max(df_bonferroni[!is.na(df_bonferroni["D"]), column])
+  }
+}
+
+p_tree <- ggtree(tree, layout = "rectangular") +
+  geom_tiplab()+
+  scale_x_continuous(expand=expansion(0.2))
+p_alpha = df_alpha %>%
+  pivot_longer(!taxa, names_to = "Alpha", values_to = "value") %>%
+  ggplot(aes(Alpha, taxa)) +
+  geom_tile(aes(fill = value), colour = "black", na.value = 'salmon') +
+  scale_fill_continuous(na.value = 'salmon') +
+  scale_fill_gradient(low = "white",high = "steelblue")+
+  theme_bw()+
+  theme(axis.text.y=element_blank(),
+  axis.ticks.y=element_blank())+
+  ylab(NULL)
+p_bonferroni = df_bonferroni %>%
+  pivot_longer(!taxa, names_to = "Bonferroni", values_to = "value") %>%
+  ggplot(aes(Bonferroni, taxa)) +
+  geom_tile(aes(fill = value), colour = "black") +
+  scale_fill_gradient(low = "white",high = "steelblue")+
+  theme_bw()+
+  theme(axis.text.y=element_blank(),
+  axis.ticks.y=element_blank())+
+  ylab(NULL)
+p_tree + p_alpha
+p_tree + p_bonferroni
+```
+
+
