@@ -1,10 +1,10 @@
 ---
-title: "Untitled"
+title: "Introgression in Bryophytes"
 output: html_document
 date: "2023-06-02"
 ---
 
-```{r}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(ggtree)
 library(dplyr)
 library(ggplot2)
@@ -12,17 +12,19 @@ library(gtable)
 library(treeio)
 library(ggnewscale)
 library(tidyverse)
+library(phytools)
 ```
 
-```{r tree}
+```{r tree, echo=FALSE, message=FALSE, warning=FALSE}
 # Create plot of proposed species tree, with aligned labels
 astral_tree <- "(Perssoniales,(Ptilidiales,(((Myliales,(Marchantiales,Jungermanniales)0.67:0.288)0.67:0.288,(Pallaviciniales,(Fossombroniales,(Pleuroziales,(Metzgeriales,(Pelliales,(Sphaerocarpales,((Blasiales,Neohodgsoniales)0.67:0.288,(Anthocerotales,(Notothyladales,(Phymatocerotales,Dendrocerotales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288,(Porellales,(Sphagnales,(Takakiales,((Tetraphidales,(Oedipodiales,Andreaeales)0.67:0.288)0.67:0.288,(Polytrichales,(Buxbaumiales,(Gigaspermales,(Funariales,((Catoscopiales,((Splachnales,(Hedwigiales,(Bartramiales,(Rhizogoniales,(Bryales,Orthotrichales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288,(Orthodontiales,((Aulacomniales,Hypnodendrales)0.67:0.288,(Ptychomniales,(Hypopterygiales,(Hypnales,Hookeriales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288,(((Dicranales,Rhabdoweisiales)0.67:0.288,(Pottiales,Ditrichales)0.67:0.288)0.67:0.288,(Grimmiales,(Archidiales,(Pleurophascales,(Bruchiales,Erpodiales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288):0.0);"
 tree <- read.nhx(textConnection(astral_tree))
 tiplabels = tree@phylo$tip.label
 numlabels = length(tiplabels)
+tree = root(tree,"Anthocerotales", resolve.root = TRUE) #reroot on the outgroup
 ```
 
-```{r mscquartets}
+```{r mscquartets, echo=FALSE, message=FALSE, warning=FALSE}
 MSC_results <- read.csv("../output/mscquartets_output.txt") %>%
   select(-jungermanniales)
 MSC_results=MSC_results[,2:56]
@@ -57,11 +59,11 @@ alphabon = data.frame(taxa = column_names, frequency = num_bonferroni)
 
 a05 = num_alpha05
 ab = num_bonferroni
-df_alpha = data.frame(MSC= a05[1:50]/summary_MSC$numSignificantAlpha)
-df_bonferroni = data.frame(MSC = ab[1:50]/summary_MSC$numSignificantBonferroni)
+df_alpha = data.frame(MSCQuartets= a05[1:50]/summary_MSC$numSignificantAlpha)
+df_bonferroni = data.frame(MSCQuartets = ab[1:50]/summary_MSC$numSignificantBonferroni)
 ```
 
-```{r nanuq}
+```{r nanuq, echo=FALSE, message=FALSE, warning=FALSE}
 nanuq_results <- read.csv("../output/nanuq_output.csv", sep = " ") %>%
   select(-jungermanniales)
 
@@ -96,13 +98,13 @@ alphabon = data.frame(taxa = column_names, frequency = num_bonferroni)
 a05 = num_alpha05
 ab = num_bonferroni
 
-df_alpha["nanuq"] = a05[1:50]/summary_nanuq$numSignificantAlpha
-df_bonferroni["nanuq"] = ab[1:50]/summary_nanuq$numSignificantBonferroni
+df_alpha["NANUQ"] = a05[1:50]/summary_nanuq$numSignificantAlpha
+df_bonferroni["NANUQ"] = ab[1:50]/summary_nanuq$numSignificantBonferroni
 df_alpha$taxa = colnames(nanuq_results)[1:50]
 df_bonferroni$taxa = colnames(nanuq_results)[1:50]
 ```
 
-```{r HyDe}
+```{r HyDe, echo=FALSE, message=FALSE, warning=FALSE}
 HyDe_results = read.csv("../output/hyde_analyzed.csv")
 
 numHyDeHyb_alpha05 = c()
@@ -211,11 +213,38 @@ df_alpha = left_join(df_alpha, df_alpha_hyde, by = "taxa")
 df_bonferroni = left_join(df_bonferroni, df_bonferroni_hyde, by = "taxa")
 ```
 
-```{r plot}
+# Introduction
+
+As a taxonomic division, Bryophytes encompass three groups of non-vascular land plants: the liverworts, hornworts and mosses. Biologists suspect the presence of an ancient hybridization in the Bryophyta group. In particular, they are interested in learning more about the phylogenetic networks and dating phylogeny. Therefore, our goal is to estimate a phylogenetic network for the Bryophyta group.
+
+# Method
+
+MSCQuartets is a package implemented in R `MSCquartets`. From gene trees, it tabulates counts for each set of four taxa as they form four different quartet relationships under the Multi-Species Coalescent Model.
+
+Similar to MSCQuartets, NANUQ is also implemented in R package `MSCquartets`, specifically in the function `NANUQ()`. The algorithm is based on an analysis of quartets displayed on gene trees, combining several statistical hypothesis tests with combinatorial ideas.
+
+Distinct from the previous two methods which evaluate for the overall presence of hybridization, HyDe identifies a singular parent-hybrid relationship between a triple, given its outgroup. This method is implemented as a C-backed python package. 
+
+Patterson’s D-Statistic  (ABBA-BABA), much like HyDe, involves the calculation of site pattern frequencies from SNPs and scales in a similar manner with respect to sequence length and number of taxa to compare. It is computed from the output of HyDe.
+
+Motivated by the original Patterson’s D-Statistic, D3 is a "faster, but less powerful" alternative. This test is SNP-focused and based on pairwise differences which likely has limitations when applied to larger genomes and indels. It is also computed from the output of HyDe.
+
+# Preprocessing
+
+The original data is in the phylip format, containing 533 gene sequences of length 77462. IQ-tree estimated 228 gene trees from the gene sequences. Since the original data contain several non-monophyletic families and the total number of families (over 60) might be too large to evaluate, we choose the ordinal level when inferring the phylogenetic networks.
+
+Given that both MSCQuartets and NANUQ take in gene trees, we choose one representative individual per species in the gene trees so that all the leaf nodes of each gene trees are at the ordinal level. There are 50 taxa in total in the gene tree file.
+
+HyDe requires an outgroup taxa as input. Given that Hornworts are the sister group to both Liverworts and Mosses, we picked "Anthocerotales" from Hornworts as the outgroup and removed all other Hornworts taxa ("Dendrocerotales", "Notothyladales", "Phymatocerotales"). To provide HyDe with the ordinal information, we feed in a taxon map file that maps each individual's name with the taxon name. 
+
+# Results 
+
+The phylogenetic trees in Figure 1 and Figure 2 are estimated by ASTRAL based on the set of unrooted gene trees, and it is rooted on the outgroup "Anthocerotales". Since both MSCQuartets and NANUQ are computed on p-values from individual quartet tests, these two algorithms give completely the same results.
+
+```{r plot, message=FALSE, warning=FALSE, echo=FALSE,fig.width = 16, fig.height=8,fig.align='center'}
 # Scale values from 0 to 1 based on the maximum value of that test
 for (column in colnames(df_alpha)) {
   if (column != "taxa"){
-    print(df_alpha[!is.na(df_alpha["D"]), column])
     df_alpha[column] = df_alpha[column] / max(df_alpha[!is.na(df_alpha["D"]), column])
     df_bonferroni[column] = df_bonferroni[column] / max(df_bonferroni[!is.na(df_bonferroni["D"]), column])
   }
@@ -244,7 +273,13 @@ p_bonferroni = df_bonferroni %>%
   axis.ticks.y=element_blank())+
   ylab(NULL)
 p_tree + p_alpha
+```
+
+Figure 1: Left: Phylogenetic tree of selected species from the Bryophyta group. Right: Heatmap of frequency of taxa identified as part of hybridization events (scaled between 0 and 1 for comparison across methods). Tests are performed at the significance level of 0.05. The grey tile means that the taxa is missing for its corresponding algorithm.
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE,fig.width = 16, fig.height=8,fig.align='center'}
 p_tree + p_bonferroni
 ```
 
+Figure 2: Left: Phylogenetic tree of selected species from the Bryophyta group. Right: Heatmap of frequency of taxa identified as part of hybridization events (scaled between 0 and 1 for comparison across methods). Tests are Bonferroni-corrected. The grey tile means that the taxa is missing for its corresponding algorithm.
 

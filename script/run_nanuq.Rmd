@@ -26,14 +26,5 @@ speciestree = NULL
 library(MASS)
 write.matrix(out,file="Mat.csv")
 ```
-
-```{r}
-#example
-data(Laurasiatherian)
-dm <- dist.hamming(Laurasiatherian)
-filename = "../output/NANUQdist_alpha0.05_beta0.95 copy.nex"
-readDist(filename, format = "nexus")
-read.nexus.dist(filename)
-```
  
 
