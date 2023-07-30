@@ -17,7 +17,7 @@ library(phytools)
 
 ```{r tree, echo=FALSE, message=FALSE, warning=FALSE}
 # Create plot of proposed species tree, with aligned labels
-astral_tree <- "(Perssoniales,(Ptilidiales,(((Myliales,(Marchantiales,Jungermanniales)0.67:0.288)0.67:0.288,(Pallaviciniales,(Fossombroniales,(Pleuroziales,(Metzgeriales,(Pelliales,(Sphaerocarpales,((Blasiales,Neohodgsoniales)0.67:0.288,(Anthocerotales,(Notothyladales,(Phymatocerotales,Dendrocerotales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288,(Porellales,(Sphagnales,(Takakiales,((Tetraphidales,(Oedipodiales,Andreaeales)0.67:0.288)0.67:0.288,(Polytrichales,(Buxbaumiales,(Gigaspermales,(Funariales,((Catoscopiales,((Splachnales,(Hedwigiales,(Bartramiales,(Rhizogoniales,(Bryales,Orthotrichales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288,(Orthodontiales,((Aulacomniales,Hypnodendrales)0.67:0.288,(Ptychomniales,(Hypopterygiales,(Hypnales,Hookeriales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288,(((Dicranales,Rhabdoweisiales)0.67:0.288,(Pottiales,Ditrichales)0.67:0.288)0.67:0.288,(Grimmiales,(Archidiales,(Pleurophascales,(Bruchiales,Erpodiales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288):0.0);"
+astral_tree <- "(Perssoniales,(Ptilidiales,(((Myliales,(Marchantiales,Jungermanniales)0.67:0.288)0.67:0.288,(Pallaviciniales,(Fossombroniales,(Pleuroziales,(Metzgeriales,(Pelliales,(Sphaerocarpales,((Blasiales,Neohodgsoniales)0.67:0.288,Anthocerotales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288,(Porellales,(Sphagnales,(Takakiales,((Tetraphidales,(Oedipodiales,Andreaeales)0.67:0.288)0.67:0.288,(Polytrichales,(Buxbaumiales,(Gigaspermales,(Funariales,((Catoscopiales,((Splachnales,(Hedwigiales,(Bartramiales,(Rhizogoniales,(Bryales,Orthotrichales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288,(Orthodontiales,((Aulacomniales,Hypnodendrales)0.67:0.288,(Ptychomniales,(Hypopterygiales,(Hypnales,Hookeriales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288,(((Dicranales,Rhabdoweisiales)0.67:0.288,(Pottiales,Ditrichales)0.67:0.288)0.67:0.288,(Grimmiales,(Archidiales,(Pleurophascales,(Bruchiales,Erpodiales)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288)0.67:0.288):0.0);"
 tree <- read.nhx(textConnection(astral_tree))
 tiplabels = tree@phylo$tip.label
 numlabels = length(tiplabels)
@@ -27,10 +27,12 @@ tree = root(tree,"Anthocerotales", resolve.root = TRUE) #reroot on the outgroup
 ```{r mscquartets, echo=FALSE, message=FALSE, warning=FALSE}
 MSC_results <- read.csv("../output/mscquartets_output.txt") %>%
   select(-jungermanniales)
-MSC_results=MSC_results[,2:56]
+MSC_results=MSC_results[,2:56] %>%
+  select(-Dendrocerotales, -Notothyladales, -Phymatocerotales)
 
 alpha <- 0.05
 numTests <- nrow(MSC_results) #249900
+
 
 summary_MSC <- MSC_results %>% summarize(
   numSignificantAlpha = sum(p_T3 < alpha, na.rm=TRUE),#36405		
@@ -59,13 +61,13 @@ alphabon = data.frame(taxa = column_names, frequency = num_bonferroni)
 
 a05 = num_alpha05
 ab = num_bonferroni
-df_alpha = data.frame(MSCQuartets= a05[1:50]/summary_MSC$numSignificantAlpha)
-df_bonferroni = data.frame(MSCQuartets = ab[1:50]/summary_MSC$numSignificantBonferroni)
+df_alpha = data.frame(MSCQuartets= a05[1:47]/summary_MSC$numSignificantAlpha)
+df_bonferroni = data.frame(MSCQuartets = ab[1:47]/summary_MSC$numSignificantBonferroni)
 ```
 
 ```{r nanuq, echo=FALSE, message=FALSE, warning=FALSE}
 nanuq_results <- read.csv("../output/nanuq_output.csv", sep = " ") %>%
-  select(-jungermanniales)
+  select(-jungermanniales, -Dendrocerotales, -Notothyladales, -Phymatocerotales)
 
 alpha <- 0.05
 numTests <- nrow(nanuq_results)
@@ -98,10 +100,10 @@ alphabon = data.frame(taxa = column_names, frequency = num_bonferroni)
 a05 = num_alpha05
 ab = num_bonferroni
 
-df_alpha["NANUQ"] = a05[1:50]/summary_nanuq$numSignificantAlpha
-df_bonferroni["NANUQ"] = ab[1:50]/summary_nanuq$numSignificantBonferroni
-df_alpha$taxa = colnames(nanuq_results)[1:50]
-df_bonferroni$taxa = colnames(nanuq_results)[1:50]
+df_alpha["NANUQ"] = a05[1:47]/summary_nanuq$numSignificantAlpha
+df_bonferroni["NANUQ"] = ab[1:47]/summary_nanuq$numSignificantBonferroni
+df_alpha$taxa = colnames(nanuq_results)[1:47]
+df_bonferroni$taxa = colnames(nanuq_results)[1:47]
 ```
 
 ```{r HyDe, echo=FALSE, message=FALSE, warning=FALSE}
@@ -122,8 +124,8 @@ numD3_bonferroni = c()
 numDp_alpha05 = c()
 numDp_bonferroni = c()
 
-tiplabels = tiplabels[-which(tiplabels %in% c("Dendrocerotales", "Notothyladales", "Phymatocerotales", "Leiosporocerotales") )]
-numlabels = length(tiplabels)
+#tiplabels = tiplabels[-which(tiplabels %in% c("Leiosporocerotales"))]
+#numlabels = length(tiplabels)
 
 for (a in 1:numlabels) {
   numHyDeHyb_alpha05[a] <- sum(HyDe_results$Hybrid == tiplabels[a] & HyDe_results$HyDe_pvalue < alpha)
@@ -241,6 +243,9 @@ HyDe requires an outgroup taxa as input. Given that Hornworts are the sister gro
 
 The phylogenetic trees in Figure 1 and Figure 2 are estimated by ASTRAL based on the set of unrooted gene trees, and it is rooted on the outgroup "Anthocerotales". Since both MSCQuartets and NANUQ are computed on p-values from individual quartet tests, these two algorithms give completely the same results.
 
+displays the heatmap of the proportion of times that each taxon is involved in a significant hybridization event
+as identified by MSCquartets, HyDe, Patterson’s D-statistics and D3
+
 ```{r plot, message=FALSE, warning=FALSE, echo=FALSE,fig.width = 16, fig.height=8,fig.align='center'}
 # Scale values from 0 to 1 based on the maximum value of that test
 for (column in colnames(df_alpha)) {
@@ -253,10 +258,17 @@ for (column in colnames(df_alpha)) {
 p_tree <- ggtree(tree, layout = "rectangular") +
   geom_tiplab()+
   scale_x_continuous(expand=expansion(0.2))
+
+d=fortify(tree)
+dd = subset(d, isTip)
+order = dd$label[order(dd$y, decreasing=TRUE)]
+
+df_alpha$taxa <- factor(df_alpha$taxa, levels = (df_alpha$taxa)[order(match(df_alpha$taxa, order), decreasing = TRUE)])
+df_bonferroni$taxa <- factor(df_bonferroni$taxa, levels = (df_bonferroni$taxa)[order(match(df_bonferroni$taxa, order), decreasing = TRUE)])
 p_alpha = df_alpha %>%
   pivot_longer(!taxa, names_to = "Alpha", values_to = "value") %>%
   ggplot(aes(Alpha, taxa)) +
-  geom_tile(aes(fill = value), colour = "black", na.value = 'salmon') +
+  geom_tile(aes(fill = value), colour = "black", na.value = 'salmon')+
   scale_fill_continuous(na.value = 'salmon') +
   scale_fill_gradient(low = "white",high = "steelblue")+
   theme_bw()+
