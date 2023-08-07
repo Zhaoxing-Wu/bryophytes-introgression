@@ -13,6 +13,8 @@ library(treeio)
 library(ggnewscale)
 library(tidyverse)
 library(phytools)
+library(tidytree)
+library(TreeTools)
 ```
 
 ```{r tree, echo=FALSE, message=FALSE, warning=FALSE}
@@ -21,7 +23,7 @@ astral_tree <- "(Perssoniales,(Ptilidiales,(((Myliales,(Marchantiales,Jungermann
 tree <- read.nhx(textConnection(astral_tree))
 tiplabels = tree@phylo$tip.label
 numlabels = length(tiplabels)
-tree = root(tree,"Anthocerotales", resolve.root = TRUE) #reroot on the outgroup
+tree =  RootTree(tree@phylo,"Anthocerotales") 
 ```
 
 ```{r mscquartets, echo=FALSE, message=FALSE, warning=FALSE}
@@ -211,8 +213,8 @@ df_bonferroni_hyde = data.frame(taxa = tiplabels,
                            HyDe_P = numHyDe_bonferroni/summary_HyDe$numHyDe_sigb,
                            D = numD_bonferroni/summary_HyDe$numD_sigb,
                            D3 = numD3_bonferroni/summary_HyDe$numD3_sigb)
-df_alpha = left_join(df_alpha, df_alpha_hyde, by = "taxa")
-df_bonferroni = left_join(df_bonferroni, df_bonferroni_hyde, by = "taxa")
+df_alpha1 = left_join(df_alpha, df_alpha_hyde, by = "taxa")
+df_bonferroni1 = left_join(df_bonferroni, df_bonferroni_hyde, by = "taxa")
 ```
 
 # Introduction
@@ -231,6 +233,8 @@ Patterson’s D-Statistic  (ABBA-BABA), much like HyDe, involves the calculation
 
 Motivated by the original Patterson’s D-Statistic, D3 is a "faster, but less powerful" alternative. This test is SNP-focused and based on pairwise differences which likely has limitations when applied to larger genomes and indels. It is also computed from the output of HyDe.
 
+SNaQ (Species Networks applying Quartets) is a statistical method to infer phylogenetic networks from multi-locus genetic data in a pseudolikelihood framework. This model accounts for incomplete lineage sorting through the coalescent model, and for horizontal inheritance of genes through reticulation nodes in the network. 
+
 # Preprocessing
 
 The original data is in the phylip format, containing 533 gene sequences of length 77462. IQ-tree estimated 228 gene trees from the gene sequences. Since the original data contain several non-monophyletic families and the total number of families (over 60) might be too large to evaluate, we choose the ordinal level when inferring the phylogenetic networks.
@@ -239,19 +243,18 @@ Given that both MSCQuartets and NANUQ take in gene trees, we choose one represen
 
 HyDe requires an outgroup taxa as input. Given that Hornworts are the sister group to both Liverworts and Mosses, we picked "Anthocerotales" from Hornworts as the outgroup and removed all other Hornworts taxa ("Dendrocerotales", "Notothyladales", "Phymatocerotales"). To provide HyDe with the ordinal information, we feed in a taxon map file that maps each individual's name with the taxon name. 
 
+Unlike the other methods, SNaQ takes in the concordance factor table an input. We apply the Julia Package `PhyloNetworks` to compute the concordance factor table on the set of gene trees with the multiple alleles per species option.
+
 # Results 
 
 The phylogenetic trees in Figure 1 and Figure 2 are estimated by ASTRAL based on the set of unrooted gene trees, and it is rooted on the outgroup "Anthocerotales". Since both MSCQuartets and NANUQ are computed on p-values from individual quartet tests, these two algorithms give completely the same results.
 
-displays the heatmap of the proportion of times that each taxon is involved in a significant hybridization event
-as identified by MSCquartets, HyDe, Patterson’s D-statistics and D3
-
 ```{r plot, message=FALSE, warning=FALSE, echo=FALSE,fig.width = 16, fig.height=8,fig.align='center'}
 # Scale values from 0 to 1 based on the maximum value of that test
-for (column in colnames(df_alpha)) {
+for (column in colnames(df_alpha1)) {
   if (column != "taxa"){
-    df_alpha[column] = df_alpha[column] / max(df_alpha[!is.na(df_alpha["D"]), column])
-    df_bonferroni[column] = df_bonferroni[column] / max(df_bonferroni[!is.na(df_bonferroni["D"]), column])
+    df_alpha1[column] = df_alpha1[column] / max(df_alpha1[!is.na(df_alpha1["D"]), column])
+    df_bonferroni1[column] = df_bonferroni1[column] / max(df_bonferroni1[!is.na(df_bonferroni1["D"]), column])
   }
 }
 
@@ -263,6 +266,8 @@ d=fortify(tree)
 dd = subset(d, isTip)
 order = dd$label[order(dd$y, decreasing=TRUE)]
 
+df_alpha = df_alpha1
+df_bonferroni = df_bonferroni1
 df_alpha$taxa <- factor(df_alpha$taxa, levels = (df_alpha$taxa)[order(match(df_alpha$taxa, order), decreasing = TRUE)])
 df_bonferroni$taxa <- factor(df_bonferroni$taxa, levels = (df_bonferroni$taxa)[order(match(df_bonferroni$taxa, order), decreasing = TRUE)])
 p_alpha = df_alpha %>%
@@ -287,11 +292,82 @@ p_bonferroni = df_bonferroni %>%
 p_tree + p_alpha
 ```
 
-Figure 1: Left: Phylogenetic tree of selected species from the Bryophyta group. Right: Heatmap of frequency of taxa identified as part of hybridization events (scaled between 0 and 1 for comparison across methods). Tests are performed at the significance level of 0.05. The grey tile means that the taxa is missing for its corresponding algorithm.
+Figure 1: Left: Phylogenetic tree of selected species from the Bryophyta group. Right: Heatmap of frequency of taxa identified as part of hybridization events (scaled between 0 and 1 for comparison across methods). Tests are performed at the significance level of 0.05. 
 
 ```{r, message=FALSE, warning=FALSE, echo=FALSE,fig.width = 16, fig.height=8,fig.align='center'}
 p_tree + p_bonferroni
 ```
 
-Figure 2: Left: Phylogenetic tree of selected species from the Bryophyta group. Right: Heatmap of frequency of taxa identified as part of hybridization events (scaled between 0 and 1 for comparison across methods). Tests are Bonferroni-corrected. The grey tile means that the taxa is missing for its corresponding algorithm.
+Figure 2: Left: Phylogenetic tree of selected species from the Bryophyta group. Right: Heatmap of frequency of taxa identified as part of hybridization events (scaled between 0 and 1 for comparison across methods). Tests are Bonferroni-corrected. 
 
+```{r, message=FALSE, warning=FALSE, echo=FALSE,fig.width = 16, fig.height=8,fig.align='center'}
+snaq_tree <- "((((((((((Oedipodiales,Tetraphidales):0.0474189866674788,Polytrichales):0.11666835419656903,(((Takakiales,((((Pelliales,(Pallaviciniales,Fossombroniales):0.15176482021691703):0.051324947478111956,((Pleuroziales,Metzgeriales):0.8809347307610181,(((Myliales,Jungermanniales):1.4312258020893758,Perssoniales):0.5120616991814858,(Porellales,Ptilidiales):0.007509442728669249):0.6554168215068044):0.1637814133505386):1.0235510098539058,(Blasiales,((Marchantiales,Sphaerocarpales):0.044010709826757755,Neohodgsoniales):1.4431139041628718):0.8692234502142334):2.0106675329161967,Anthocerotales):1.4254545472741615):0.1645769401922199,Sphagnales):0.5843133916516633,Andreaeales):0.6418901625370256):0.4683347895138096,Buxbaumiales):0.6818145764795444,Gigaspermales):0.3595030560064854,Funariales):0.4728864283980148,(((Grimmiales,(((Rhabdoweisiales,((Pottiales,Ditrichales):0.14759290572486392,((Erpodiales,Bruchiales):0.5235225142216609)):0.5588610757593384):0.048648675205419975,(Dicranales,#H48:0.0032825715845608276::0.07518608641510395):3.331340458707548):0.2135087048736687,Archidiales):0.059691338040607146):0.3959014350055196,Pleurophascales):0.2847956782061885,Catoscopiales):0.48460063445423585):1.2245905859534711,(Bryales,((Rhizogoniales,(((Aulacomniales,Orthodontiales):0.04556777293890821,Hypnodendrales):0.0011262255415632537,((Hypopterygiales,(Hookeriales,Hypnales):0.045278584169739136):0.7429364702696049,Ptychomniales):0.5624696028657126):0.14064609375443174):0.00024867380288660343,Orthotrichales):0.5543727265862737):0.40720992080206314):6.65414557359528e-5,Splachnales):0.07783438026976097,Bartramiales,Hedwigiales);"
+
+#tree = RootTree(tree@phylo,"Anthocerotales") 
+snaq_tree_rooted = "((((((((Oedipodiales:NaN,Tetraphidales:NaN):0.04741898667,Polytrichales:NaN):0.1166683542,(Buxbaumiales:NaN,(Gigaspermales:NaN,(Funariales:NaN,((((Grimmiales:NaN,(((Rhabdoweisiales:NaN,((Pottiales:NaN,Ditrichales:NaN):0.1475929057,((Erpodiales:NaN,Bruchiales:NaN)H:0.5235225142):NaN):0.5588610758):0.04864867521,(Dicranales:NaN,#H48:0.003282571585):3.331340459):0.2135087049,Archidiales:NaN):0.05969133804):0.395901435,Pleurophascales:NaN):0.2847956782,Catoscopiales:NaN):0.4846006345,((Bryales:NaN,((Rhizogoniales:NaN,(((Aulacomniales:NaN,Orthodontiales:NaN):0.04556777294,Hypnodendrales:NaN):0.001126225542,((Hypopterygiales:NaN,(Hookeriales:NaN,Hypnales:NaN):0.04527858417):0.7429364703,Ptychomniales:NaN):0.5624696029):0.1406460938):0.0002486738029,Orthotrichales:NaN):0.5543727266):0.4072099208,(Splachnales:NaN,(Bartramiales:NaN,Hedwigiales:NaN):0.07783438027):6.654145574e-05):1.224590586):0.4728864284):0.359503056):0.6818145765):0.4683347895):0.6418901625,Andreaeales:NaN):0.5843133917,Sphagnales:NaN):0.1645769402,Takakiales:NaN):1.425454547,(((Pelliales:NaN,(Pallaviciniales:NaN,Fossombroniales:NaN):0.1517648202):0.05132494748,((Pleuroziales:NaN,Metzgeriales:NaN):0.8809347308,(((Myliales:NaN,Jungermanniales:NaN):1.431225802,Perssoniales:NaN):0.5120616992,(Porellales:NaN,Ptilidiales:NaN):0.007509442729):0.6554168215):0.1637814134):1.02355101,(Blasiales:NaN,((Marchantiales:NaN,Sphaerocarpales:NaN):0.04401070983,Neohodgsoniales:NaN):1.443113904):0.8692234502):2.010667533):NaN,Anthocerotales:0);"
+
+tree <- read.nhx(textConnection(snaq_tree_rooted))
+#tree_tibble = as_tibble(tree)
+#tree_tibble$label[tree_tibble$label == "#H48"] = ""
+#tree = as.treedata(tree_tibble)
+tree@phylo$tip.label[tree@phylo$tip.label=="#H48"]=""
+tiplabels = tree@phylo$tip.label
+numlabels = length(tiplabels)
+
+p_tree <- ggtree(tree, layout = "rectangular") +
+  geom_tiplab()+
+  geom_taxalink(taxa1=14, taxa2="H", color='red', linetype = 'dashed',
+    arrow=arrow(length=unit(0.02, "npc")))+
+  scale_x_continuous(expand=expansion(0.2))
+
+d=fortify(tree)
+dd = subset(d, isTip)
+order = dd$label[order(dd$y, decreasing=TRUE)]
+
+df_alpha1[nrow(df_alpha1) + 1,] = c(NA,NA,"",NA,NA,NA,NA)
+df_bonferroni1[nrow(df_bonferroni1) + 1,] = c(NA,NA,"",NA,NA,NA,NA)
+
+df_alpha1$taxa <- factor(df_alpha1$taxa, levels = (df_alpha1$taxa)[order(match(df_alpha1$taxa, order), decreasing = TRUE)])
+df_bonferroni1$taxa <- factor(df_bonferroni1$taxa, levels = (df_bonferroni1$taxa)[order(match(df_bonferroni1$taxa, order), decreasing = TRUE)])
+
+
+df_bonferroni1$MSCQuartets = as.numeric(df_bonferroni1$MSCQuartets)
+df_bonferroni1$NANUQ = as.numeric(df_bonferroni1$NANUQ)
+df_bonferroni1$HyDe_H = as.numeric(df_bonferroni1$HyDe_H)
+df_bonferroni1$HyDe_P = as.numeric(df_bonferroni1$HyDe_P)
+df_bonferroni1$D = as.numeric(df_bonferroni1$D)
+df_bonferroni1$D3 = as.numeric(df_bonferroni1$D3)
+df_alpha1$MSCQuartets = as.numeric(df_alpha1$MSCQuartets)
+df_alpha1$NANUQ = as.numeric(df_alpha1$NANUQ)
+df_alpha1$HyDe_H = as.numeric(df_alpha1$HyDe_H)
+df_alpha1$HyDe_P = as.numeric(df_alpha1$HyDe_P)
+df_alpha1$D = as.numeric(df_alpha1$D)
+df_alpha1$D3 = as.numeric(df_alpha1$D3)
+p_alpha = df_alpha1 %>%
+  pivot_longer(!taxa, names_to = "Alpha", values_to = "value") %>%
+  ggplot(aes(Alpha, taxa)) +
+  geom_tile(aes(fill = value), colour = "black", na.value = 'salmon')+
+  scale_fill_continuous(na.value = 'salmon') +
+  scale_fill_gradient(low = "white",high = "steelblue")+
+  theme_bw()+
+  theme(axis.text.y=element_blank(),
+  axis.ticks.y=element_blank())+
+  ylab(NULL)
+p_bonferroni = df_bonferroni1 %>%
+  pivot_longer(!taxa, names_to = "Bonferroni", values_to = "value") %>%
+  ggplot(aes(Bonferroni, taxa)) +
+  geom_tile(aes(fill = value), colour = "black") +
+  scale_fill_gradient(low = "white",high = "steelblue")+
+  theme_bw()+
+  theme(axis.text.y=element_blank(),
+  axis.ticks.y=element_blank())+
+  ylab(NULL)
+p_tree + p_alpha
+```
+Figure 3: Left: Phylogenetic network of selected species from the Bryophyta group, estimated with SNaQ. The red arrow indicates the hybridization. Right: Heatmap of frequency of taxa identified as part of hybridization events (scaled between 0 and 1 for comparison across methods).  Tests are performed at the significance level of 0.05.
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE,fig.width = 16, fig.height=8,fig.align='center'}
+p_tree + p_bonferroni
+```
+
+Figure 4: Left: Phylogenetic network of selected species from the Bryophyta group, estimated with SNaQ. The red arrow indicates the hybridization. Right: Heatmap of frequency of taxa identified as part of hybridization events (scaled between 0 and 1 for comparison across methods). Tests are Bonferroni-corrected. 
